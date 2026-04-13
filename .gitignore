@@ -2,7 +2,6 @@ build/
 dist/
 __pycache__/
 *.pyc
-*.spec
 /platform-tools/
 release/*.zip
 .claude/
