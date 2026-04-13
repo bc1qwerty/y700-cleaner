@@ -54,6 +54,13 @@ PACKAGES = {
         ("com.lenovo.xbb", "Lenovo 계정 (CN)"),
         ("com.lenovo.weathercenter", "Lenovo 날씨"),
         ("com.lenovo.lfh.tianjiao.tablet", "Tianjiao 교육 (CN)"),
+        ("com.lenovo.lenovoprivacy", "Lenovo 개인정보 고지 (CN)"),
+        ("com.lenovo.menu_assistant.hd", "플로팅 메뉴 어시스턴트"),
+        ("com.lenovo.screensaver", "Lenovo 스크린세이버"),
+    ],
+    "Lenovo 텔레메트리": [
+        ("com.lenovo.ue.device", "Lenovo UX 텔레메트리"),
+        ("com.tblenovo.ue.config", "Lenovo UX 설정"),
     ],
     "Lenovo 푸시/광고": [
         ("com.tblenovo.lenovowhatsnew", "새로운 기능 알림"),
@@ -84,6 +91,8 @@ PACKAGES = {
         ("com.zui.wallpapersetting", "배경화면 설정"),
         ("com.zui.net.data.monitor", "데이터 모니터"),
         ("com.zui.xlog", "ZUI xlog"),
+        ("com.zui.contacts", "ZUI 연락처"),
+        ("com.zui.camera.qr", "ZUI QR 스캐너"),
     ],
     "WAPI (중국 WiFi 인증)": [
         ("com.wapi.wapicertmanage", "WAPI 인증서 관리자"),
@@ -105,6 +114,7 @@ PACKAGES = {
         ("com.android.storagemanager", "저장공간 관리"),
         ("com.android.cellbroadcastreceiver", "긴급재난문자"),
         ("com.android.cellbroadcastservice", "긴급재난문자 서비스"),
+        ("com.android.bluetoothmidiservice", "블루투스 MIDI 서비스"),
     ],
     "Qualcomm XR/부가 서비스": [
         ("com.qualcomm.qti.xrwifi", "XR WiFi"),
@@ -113,6 +123,7 @@ PACKAGES = {
         ("com.quicinc.voice.activation", "Qualcomm 음성 핫워드"),
         ("vendor.qti.bluetooth.xpan", "BT XPAN"),
         ("vendor.qti.data.ntnsatapp", "위성 통신"),
+        ("com.qualcomm.qti.cne", "Connectivity Network Engine"),
     ],
     "SIM/통신 (Y700 WiFi-only)": [
         ("com.qualcomm.qti.lpa", "eSIM 프로비저닝"),
@@ -127,6 +138,7 @@ PACKAGES = {
         ("com.qualcomm.qti.poweroffalarm", "전원꺼짐 알람"),
         ("com.qti.xdivert", "착신전환"),
         ("com.qti.dcf", "DCF"),
+        ("com.qti.ltebc", "LTE Broadcast Cell"),
         ("com.android.imsserviceentitlement", "IMS 서비스 권한"),
         ("com.android.simappdialog", "SIM 앱 다이얼로그"),
         ("vendor.qti.imsrcs", "IMS RCS"),

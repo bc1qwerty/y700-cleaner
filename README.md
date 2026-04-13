@@ -30,15 +30,16 @@ The tool auto-detects the device and shows a curated removal list tailored to th
 ## Removal Targets
 
 - **Baidu / China trackers** — Baidu location tracking
-- **Lenovo CN services** — Lenovo App Store, cloud sync, account (xbb), weather, Tianjiao education, etc.
+- **Lenovo CN services** — Lenovo App Store, cloud sync, account (xbb), weather, Tianjiao education, privacy notice, floating menu assistant, screensaver
+- **Lenovo telemetry** — Lenovo UX telemetry (`ue.device`, `ue.config`)
 - **Lenovo push / ads** — "What's new" notifications, push ads, Xiaotian trigger
 - **Lenovo voice / remote support** — Lenovo Voice, LeVision, LMSA
 - **Factory / engineering test** — EngineeringCode, factory test, Lenovo auto-install config
-- **ZUI optional apps** — ZUI Browser, AI Lens / Stylus, PP, xlog, etc.
+- **ZUI optional apps** — ZUI Browser, AI Lens / Stylus, PP, xlog, Contacts, QR scanner, etc.
 - **WAPI** — Chinese Wi-Fi certificate manager
-- **Android unnecessary apps** — Print, HTML viewer, SMS/MMS, DeviceAsWebcam, emergency broadcast, etc.
-- **Qualcomm XR / extras** — XR Wi-Fi / video, voice hotword, satellite communication
-- **SIM / telephony** — eSIM, SIM-related services (Y700 is Wi-Fi only)
+- **Android unnecessary apps** — Print, HTML viewer, SMS/MMS, DeviceAsWebcam, emergency broadcast, Bluetooth MIDI, etc.
+- **Qualcomm XR / extras** — XR Wi-Fi / video, voice hotword, satellite communication, Connectivity Network Engine
+- **SIM / telephony** — eSIM, SIM-related services, LTE Broadcast Cell (Y700 is Wi-Fi only)
 
 ## Protected Packages (Never Removed)
 
