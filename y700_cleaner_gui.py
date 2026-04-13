@@ -13,7 +13,7 @@ Lenovo Legion Y700 3세대 (TB322FC) 블로트웨어 제거 + 최적화 GUI.
   - 분석되지 않은 패키지는 기본 목록에 포함하지 않음
 """
 
-VERSION = "1.1"
+VERSION = "1.2"
 
 import subprocess
 import sys
@@ -187,7 +187,8 @@ KEEP_PACKAGES = {
     "com.dolby.dolbyvisionservice": "Dolby Vision",
 }
 
-# ── 성능 최적화 설정 ─────────────────────────────────────
+# ── 성능 최적화 설정 (기본) ───────────────────────────────
+# "전체 선택" 대상. 일반적으로 안전하고 대부분의 사용자에게 유익.
 
 PERFORMANCE_SETTINGS = [
     {
@@ -237,6 +238,64 @@ PERFORMANCE_SETTINGS = [
         "namespace": "global",
         "on_value": "0",
         "off_value": "1",
+    },
+    {
+        "key": "package_verifier_enable",
+        "name": "Play Protect 앱 검증 끄기",
+        "desc": "사이드로드 설치 가속 (F-Droid/Obtainium)",
+        "namespace": "global",
+        "on_value": "0",
+        "off_value": "1",
+    },
+    {
+        "key": "verifier_verify_adb_installs",
+        "name": "ADB 설치 검증 끄기",
+        "desc": "adb install 시 승인 팝업 제거",
+        "namespace": "global",
+        "on_value": "0",
+        "off_value": "1",
+    },
+    {
+        "key": "stay_on_while_plugged_in",
+        "name": "충전 중 화면 켜둠",
+        "desc": "AC/USB/무선 충전 시 화면 자동 꺼짐 방지",
+        "namespace": "global",
+        "on_value": "7",
+        "off_value": "0",
+    },
+]
+
+# ── 선택 설정 (opt-in 전용) ────────────────────────────────
+# "전체 선택" 대상 아님. 개별 체크로만 적용. 성향/환경에 따라 다름.
+# extras: [(key, on_value, off_value)] — on 적용 시 함께 설정, off 가 None 이면 settings delete.
+
+OPTIONAL_SETTINGS = [
+    {
+        "key": "private_dns_mode",
+        "name": "Private DNS (AdGuard)",
+        "desc": "광고/트래커 차단 DNS (dns.adguard.com) 강제 사용",
+        "namespace": "global",
+        "on_value": "hostname",
+        "off_value": "opportunistic",
+        "extras": [
+            ("private_dns_specifier", "dns.adguard.com", None),
+        ],
+    },
+    {
+        "key": "haptic_feedback_enabled",
+        "name": "햅틱 피드백 끄기",
+        "desc": "터치/키보드 진동 완전 비활성화",
+        "namespace": "system",
+        "on_value": "0",
+        "off_value": "1",
+    },
+    {
+        "key": "adb_wifi_enabled",
+        "name": "ADB over WiFi 활성화",
+        "desc": "USB 없이 무선 디버깅 (최초 1회 기기에서 페어링 필요)",
+        "namespace": "global",
+        "on_value": "1",
+        "off_value": "0",
     },
 ]
 
@@ -397,6 +456,13 @@ class App(ctk.CTk):
         self.perf_frame.pack(fill="both", expand=True, pady=(0, 4))
 
         self.perf_vars: dict[str, ctk.BooleanVar] = {}
+        self.optional_vars: dict[str, ctk.BooleanVar] = {}
+
+        # 기본 섹션
+        ctk.CTkLabel(
+            self.perf_frame, text="── 기본 성능 설정 (권장) ──",
+            font=("", 12, "bold"), text_color="#2ecc71",
+        ).pack(anchor="w", padx=4, pady=(4, 2))
         for s in PERFORMANCE_SETTINGS:
             var = ctk.BooleanVar(value=False)
             frame = ctk.CTkFrame(self.perf_frame)
@@ -407,12 +473,39 @@ class App(ctk.CTk):
             desc.pack(side="left", padx=8, pady=4)
             self.perf_vars[s["key"]] = var
 
+        # 선택 섹션 (전체 선택 대상 아님)
+        ctk.CTkLabel(
+            self.perf_frame,
+            text="── 선택 설정 (개별 선택만, 전체 선택 버튼에 포함 안 됨) ──",
+            font=("", 12, "bold"), text_color="#f39c12",
+        ).pack(anchor="w", padx=4, pady=(14, 2))
+        for s in OPTIONAL_SETTINGS:
+            var = ctk.BooleanVar(value=False)
+            frame = ctk.CTkFrame(self.perf_frame)
+            frame.pack(fill="x", padx=4, pady=2)
+            cb = ctk.CTkCheckBox(frame, text=f"  {s['name']}", variable=var, font=("", 12), text_color="#f39c12")
+            cb.pack(side="left", padx=8, pady=4)
+            desc = ctk.CTkLabel(frame, text=s["desc"], font=("", 11), text_color="gray")
+            desc.pack(side="left", padx=8, pady=4)
+            self.optional_vars[s["key"]] = var
+
+        sel = ctk.CTkFrame(self.tab_perf)
+        sel.pack(fill="x", pady=(0, 4))
+        ctk.CTkButton(sel, text="기본 전체 선택", width=120, command=lambda: self._select_all_perf(True)).pack(side="left", padx=4, pady=4)
+        ctk.CTkButton(sel, text="기본 전체 해제", width=120, command=lambda: self._select_all_perf(False)).pack(side="left", padx=4, pady=4)
+        ctk.CTkLabel(sel, text="(선택 설정은 전체 선택 대상 아님)", font=("", 11), text_color="gray").pack(side="left", padx=8, pady=4)
+
         btn = ctk.CTkFrame(self.tab_perf)
         btn.pack(fill="x")
         self.perf_apply_btn = ctk.CTkButton(btn, text="선택 항목 적용", fg_color="#27ae60", hover_color="#2ecc71", command=self._on_perf_apply)
         self.perf_apply_btn.pack(side="left", padx=4, pady=4, expand=True, fill="x")
         self.perf_reset_btn = ctk.CTkButton(btn, text="선택 항목 초기화", fg_color="#7f8c8d", hover_color="#95a5a6", command=self._on_perf_reset)
         self.perf_reset_btn.pack(side="left", padx=4, pady=4, expand=True, fill="x")
+
+    def _select_all_perf(self, state: bool):
+        """기본 성능 설정만 토글. 선택 설정은 건드리지 않음."""
+        for var in self.perf_vars.values():
+            var.set(state)
 
     # ── 로그 ─────────────────────────────────────────────
 
@@ -537,8 +630,11 @@ class App(ctk.CTk):
         for s in PERFORMANCE_SETTINGS:
             _, val = run_adb("shell", "settings", "get", s["namespace"], s["key"])
             val = val.strip()
-            is_optimized = (val == s["on_value"])
-            self.perf_vars[s["key"]].set(is_optimized)
+            self.perf_vars[s["key"]].set(val == s["on_value"])
+        for s in OPTIONAL_SETTINGS:
+            _, val = run_adb("shell", "settings", "get", s["namespace"], s["key"])
+            val = val.strip()
+            self.optional_vars[s["key"]].set(val == s["on_value"])
 
     # ── 공통 유틸 ────────────────────────────────────────
 
@@ -595,29 +691,43 @@ class App(ctk.CTk):
 
     # ── 성능 적용/초기화 ────────────────────────────────
 
-    def _on_perf_apply(self):
+    def _collect_selected_settings(self) -> list[dict]:
+        """기본 + 선택 섹션에서 체크된 모든 항목을 합친다."""
         selected = [s for s in PERFORMANCE_SETTINGS if self.perf_vars[s["key"]].get()]
+        selected += [s for s in OPTIONAL_SETTINGS if self.optional_vars[s["key"]].get()]
+        return selected
+
+    def _on_perf_apply(self):
+        selected = self._collect_selected_settings()
         if not selected:
             self._log("적용할 항목이 없습니다")
             return
         self._set_all_buttons(False)
-        self._log(f"{len(selected)}개 성능 설정 적용 시작...")
+        self._log(f"{len(selected)}개 설정 적용 시작...")
         threading.Thread(target=self._do_perf, args=(selected, "apply"), daemon=True).start()
 
     def _on_perf_reset(self):
-        selected = [s for s in PERFORMANCE_SETTINGS if self.perf_vars[s["key"]].get()]
+        selected = self._collect_selected_settings()
         if not selected:
             self._log("초기화할 항목이 없습니다")
             return
         self._set_all_buttons(False)
-        self._log(f"{len(selected)}개 성능 설정 초기화 시작...")
+        self._log(f"{len(selected)}개 설정 초기화 시작...")
         threading.Thread(target=self._do_perf, args=(selected, "reset"), daemon=True).start()
 
     def _do_perf(self, settings: list[dict], action: str):
         success = 0
         for s in settings:
             value = s["on_value"] if action == "apply" else s["off_value"]
-            _, out = run_adb("shell", "settings", "put", s["namespace"], s["key"], value)
+            run_adb("shell", "settings", "put", s["namespace"], s["key"], value)
+            for extra in s.get("extras", []):
+                ekey, eon, eoff = extra
+                if action == "apply":
+                    run_adb("shell", "settings", "put", s["namespace"], ekey, eon)
+                elif eoff is None:
+                    run_adb("shell", "settings", "delete", s["namespace"], ekey)
+                else:
+                    run_adb("shell", "settings", "put", s["namespace"], ekey, eoff)
             self.after(0, self._log, f"  [OK] {s['name']} → {value}")
             success += 1
         label = "적용" if action == "apply" else "초기화"

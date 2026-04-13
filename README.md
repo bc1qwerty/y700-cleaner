@@ -87,13 +87,23 @@ No Python required — the exe and ADB binaries are bundled.
 ### CLI Mode
 
 ```
-py y700_cleaner.py              # Interactive mode
-py y700_cleaner.py --list       # Print removal targets
-py y700_cleaner.py --clean      # Run full removal
-py y700_cleaner.py --restore    # Restore removed apps
-py y700_cleaner.py --perf       # Apply performance settings
-py y700_cleaner.py --perf-reset # Reset performance settings
+py y700_cleaner.py                  # Interactive mode
+py y700_cleaner.py --list           # Print removal targets
+py y700_cleaner.py --clean          # Run full removal
+py y700_cleaner.py --restore        # Restore removed apps
+py y700_cleaner.py --perf           # Apply default performance settings
+py y700_cleaner.py --perf-reset     # Reset default performance settings
+py y700_cleaner.py --perf-optional  # Walk through opt-in extras one by one
 ```
+
+### Performance settings
+
+The **Performance** tab is split into two sections:
+
+- **Default settings** — animation scales, background scans, notification pop-ups, Play Protect verification, ADB install verification, stay-on-while-charging. The **Select All (default)** button only covers this section. These are safe for most users.
+- **Opt-in extras** — Private DNS (AdGuard), haptic feedback off, ADB over Wi-Fi. These are **never included in Select All** and must be ticked individually, because they depend on personal preference or network setup.
+
+The same split is enforced from the CLI: `--perf` applies the default section only, and `--perf-optional` walks through each extra individually and asks for `y/N`.
 
 ## Removal Method
 

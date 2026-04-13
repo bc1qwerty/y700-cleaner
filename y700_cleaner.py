@@ -8,11 +8,13 @@ Lenovo Legion Y700 블로트웨어 제거 / 최적화 도구 (CLI)
       GL/Global ROM 은 일부 패키지명이 다를 수 있습니다.
 
 사용법:
-  py y700_cleaner.py              # 대화형 모드
-  py y700_cleaner.py --list       # 대상 목록만 출력
-  py y700_cleaner.py --clean      # 앱 비활성화 실행
-  py y700_cleaner.py --restore    # 복구
-  py y700_cleaner.py --perf       # 성능 설정 적용
+  py y700_cleaner.py                  # 대화형 모드
+  py y700_cleaner.py --list           # 대상 목록만 출력
+  py y700_cleaner.py --clean          # 앱 비활성화 실행
+  py y700_cleaner.py --restore        # 복구
+  py y700_cleaner.py --perf           # 기본 성능 설정 적용
+  py y700_cleaner.py --perf-reset     # 기본 성능 설정 초기화
+  py y700_cleaner.py --perf-optional  # 선택 설정 개별 확인 후 적용
 """
 
 import subprocess
@@ -178,7 +180,8 @@ KEEP_PACKAGES = {
 }
 
 
-# ── 성능 최적화 설정 ─────────────────────────────────────
+# ── 성능 최적화 설정 (기본) ───────────────────────────────
+# "전체 선택" 대상. 일반적으로 안전하고 대부분의 사용자에게 유익.
 PERFORMANCE_SETTINGS = [
     {
         "key": "window_animation_scale",
@@ -227,6 +230,64 @@ PERFORMANCE_SETTINGS = [
         "namespace": "global",
         "on_value": "0",
         "off_value": "1",
+    },
+    {
+        "key": "package_verifier_enable",
+        "name": "Play Protect 앱 검증 끄기",
+        "desc": "사이드로드 설치 가속 (F-Droid/Obtainium 대응)",
+        "namespace": "global",
+        "on_value": "0",
+        "off_value": "1",
+    },
+    {
+        "key": "verifier_verify_adb_installs",
+        "name": "ADB 설치 검증 끄기",
+        "desc": "adb install 시마다 뜨는 승인 팝업 제거",
+        "namespace": "global",
+        "on_value": "0",
+        "off_value": "1",
+    },
+    {
+        "key": "stay_on_while_plugged_in",
+        "name": "충전 중 화면 켜둠",
+        "desc": "AC/USB/무선 충전 시 화면 자동 꺼짐 방지",
+        "namespace": "global",
+        "on_value": "7",
+        "off_value": "0",
+    },
+]
+
+# ── 선택 설정 (opt-in 전용) ────────────────────────────────
+# 전체 선택 대상 아님. 개별 체크로만 적용. 성향/환경에 따라 다름.
+# extras: [(key, on_value, off_value)] — on_value 적용 시 함께 설정,
+#         off_value 가 None 이면 reset 시 settings delete.
+OPTIONAL_SETTINGS = [
+    {
+        "key": "private_dns_mode",
+        "name": "Private DNS (AdGuard)",
+        "desc": "광고/트래커 차단 DNS (dns.adguard.com) 강제 사용",
+        "namespace": "global",
+        "on_value": "hostname",
+        "off_value": "opportunistic",
+        "extras": [
+            ("private_dns_specifier", "dns.adguard.com", None),
+        ],
+    },
+    {
+        "key": "haptic_feedback_enabled",
+        "name": "햅틱 피드백 끄기",
+        "desc": "터치/키보드 진동 완전 비활성화",
+        "namespace": "system",
+        "on_value": "0",
+        "off_value": "1",
+    },
+    {
+        "key": "adb_wifi_enabled",
+        "name": "ADB over WiFi 활성화",
+        "desc": "USB 없이 무선 디버깅 (최초 1회 기기에서 페어링 필요)",
+        "namespace": "global",
+        "on_value": "1",
+        "off_value": "0",
     },
 ]
 
@@ -346,20 +407,52 @@ def restore_packages():
     print(f"\n완료: {success}개 복구, {fail}개 실패")
 
 
+def _apply_setting(s: dict, action: str):
+    """단일 설정과 그 extras 를 적용/초기화."""
+    value = s["on_value"] if action == "apply" else s["off_value"]
+    run_adb("shell", "settings", "put", s["namespace"], s["key"], value)
+    for extra in s.get("extras", []):
+        ekey, eon, eoff = extra
+        if action == "apply":
+            run_adb("shell", "settings", "put", s["namespace"], ekey, eon)
+        elif eoff is None:
+            run_adb("shell", "settings", "delete", s["namespace"], ekey)
+        else:
+            run_adb("shell", "settings", "put", s["namespace"], ekey, eoff)
+
+
 def apply_perf():
-    print(f"\n{len(PERFORMANCE_SETTINGS)}개 성능 설정을 적용합니다...\n")
+    print(f"\n{len(PERFORMANCE_SETTINGS)}개 기본 성능 설정을 적용합니다...\n")
     for s in PERFORMANCE_SETTINGS:
-        _, out = run_adb("shell", "settings", "put", s["namespace"], s["key"], s["on_value"])
+        _apply_setting(s, "apply")
         print(f"  [OK] {s['name']} → {s['on_value']}")
-    print("\n성능 설정 적용 완료")
+    print("\n기본 성능 설정 적용 완료 (선택 설정은 --perf-optional 로 개별 적용)")
 
 
 def reset_perf():
-    print(f"\n{len(PERFORMANCE_SETTINGS)}개 성능 설정을 초기화합니다...\n")
+    print(f"\n{len(PERFORMANCE_SETTINGS)}개 기본 성능 설정을 초기화합니다...\n")
     for s in PERFORMANCE_SETTINGS:
-        _, out = run_adb("shell", "settings", "put", s["namespace"], s["key"], s["off_value"])
+        _apply_setting(s, "reset")
         print(f"  [OK] {s['name']} → {s['off_value']}")
-    print("\n성능 설정 초기화 완료")
+    print("\n기본 성능 설정 초기화 완료")
+
+
+def apply_optional():
+    """선택 설정을 대화형으로 하나씩 묻고 적용."""
+    print(f"\n{len(OPTIONAL_SETTINGS)}개의 선택 설정이 있습니다 (개별 확인).\n")
+    print("각 항목은 기본적으로 적용되지 않으며, 직접 y 를 입력해야만 적용됩니다.\n")
+    applied = 0
+    for s in OPTIONAL_SETTINGS:
+        print(f"  [{s['name']}]")
+        print(f"     {s['desc']}")
+        ans = input(f"     적용할까요? (y/N): ").strip().lower()
+        if ans == "y":
+            _apply_setting(s, "apply")
+            print(f"     [OK] 적용됨 → {s['on_value']}\n")
+            applied += 1
+        else:
+            print(f"     건너뜀\n")
+    print(f"선택 설정 처리 완료: {applied}/{len(OPTIONAL_SETTINGS)} 적용됨")
 
 
 def interactive_mode():
@@ -382,8 +475,9 @@ def interactive_mode():
     print("[1] 제거 대상 목록 보기")
     print("[2] 블로트웨어 제거 실행")
     print("[3] 제거한 앱 복구")
-    print("[4] 성능 설정 적용 (애니메이션 0.5배 등)")
-    print("[5] 성능 설정 초기화")
+    print("[4] 기본 성능 설정 적용 (애니메이션 0.5배 등)")
+    print("[5] 기본 성능 설정 초기화")
+    print("[6] 선택 설정 개별 적용 (Private DNS, 햅틱 끄기, ADB over WiFi)")
     print("[q] 종료")
     print()
 
@@ -404,6 +498,8 @@ def interactive_mode():
         apply_perf()
     elif choice == "5":
         reset_perf()
+    elif choice == "6":
+        apply_optional()
     elif choice == "q":
         print("종료.")
     else:
@@ -428,11 +524,14 @@ def main():
         elif arg == "--perf-reset":
             if check_device():
                 reset_perf()
+        elif arg == "--perf-optional":
+            if check_device():
+                apply_optional()
         elif arg in ("--help", "-h"):
             print(__doc__)
         else:
             print(f"알 수 없는 옵션: {arg}")
-            print("사용법: py y700_cleaner.py [--list|--clean|--restore|--perf|--perf-reset]")
+            print("사용법: py y700_cleaner.py [--list|--clean|--restore|--perf|--perf-reset|--perf-optional]")
     else:
         interactive_mode()
 
