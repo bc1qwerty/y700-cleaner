@@ -8,12 +8,12 @@ The tool auto-detects the device and shows a curated removal list tailored to th
 
 ## Supported Devices
 
-| Field | Lenovo Legion Y700 (3rd gen) |
+| Field | Lenovo Legion Y700 (Gen 4, 2025) |
 |---|---|
 | Codename | TB322FC |
-| Firmware | ZUI ZUXOS 1.5.x |
-| Android | 16 (API 36) |
-| Platform | Qualcomm sun |
+| Firmware | ZUI ZUXOS 1.5.x (also tested on 1.1.11.x) |
+| Android | 16 (API 35) |
+| Platform | Qualcomm Snapdragon 8 Elite (sun) |
 | Region | CN_OPEN (China domestic) |
 
 > **Note**: The package list is built against the CN_OPEN ROM. Global ROMs may have different package names; any entries that aren't installed on the connected device are hidden automatically.
@@ -36,10 +36,10 @@ The tool auto-detects the device and shows a curated removal list tailored to th
 - **Lenovo voice / remote support** — Lenovo Voice, LeVision, LMSA
 - **Factory / engineering test** — EngineeringCode, factory test, Lenovo auto-install config
 - **ZUI optional apps** — ZUI Browser, AI Lens / Stylus, PP, xlog, Contacts, QR scanner, etc.
-- **WAPI** — Chinese Wi-Fi certificate manager
-- **Android unnecessary apps** — Print, HTML viewer, SMS/MMS, DeviceAsWebcam, emergency broadcast, Bluetooth MIDI, etc.
-- **Qualcomm XR / extras** — XR Wi-Fi / video, voice hotword, satellite communication, Connectivity Network Engine
+- **Android unnecessary apps** — print recommendations, HTML viewer, MMS, DeviceAsWebcam, emergency broadcast, etc.
+- **Qualcomm XR / extras** — XR Wi-Fi / video, voice hotword
 - **SIM / telephony** — eSIM, SIM-related services, LTE Broadcast Cell (Y700 is Wi-Fi only)
+- **Ready For (PC mode unused)** — `com.motorola.mobiledesktop` and friends. Removed only if you don't use the PC monitor / Ready For workflow (avoids `leapp://` `ActivityNotFoundException` after `com.lenovo.leos.appstore` is removed)
 
 ## Protected Packages (Never Removed)
 
@@ -53,8 +53,11 @@ The following packages are declared in `KEEP_PACKAGES` and are excluded from the
 | Productivity | `com.zui.freeform.sidebar`, `com.zui.filemanager`, `com.zui.camera`, `com.zui.gallery` |
 | Gaming | `com.lenovo.hyperengine`, `com.lenovo.tab_extreme`, `com.lenovo.tbengine` |
 | Stylus / Split | `com.lenovo.penservice`, `com.lenovo.screensplit` |
-| PC Mode | `com.motorola.mobiledesktop.core` |
 | Media | `com.dolby.daxservice`, `com.dolby.dolbyvisionservice` |
+| System Provider | `com.motorola.android.providers.settings` |
+| **More-Connections deps** (v1.3, ANR-fix) | `com.qualcomm.qti.cne`, `com.android.printspooler`, `com.android.bips`, `vendor.qti.bluetooth.xpan`, `vendor.qti.data.ntnsatapp`, `com.qualcomm.qti.uceShimService`, `vendor.qti.imsrcs`, `vendor.qti.imsdatachannel`, `com.android.smspush`, `com.android.bluetoothmidiservice`, `com.android.hotspot2.osulogin`, `com.wapi.wapicertmanage` |
+
+> **v1.3 note**: The Lenovo "More connections" settings page issues synchronous binder calls into a wide set of telephony / connectivity components. Removing any one of the items in the last row caused a 5-second ANR (`MoreConnectionsSettings`). They are now protected by `KEEP_PACKAGES`. If you previously removed them with v1.2, restore via `adb shell cmd package install-existing --user 0 <package>` or run a factory reset.
 
 ## Download
 
@@ -139,7 +142,7 @@ Y700Cleaner/
 This project carries over the lessons learned from the `boox-cleaner` v2.2 incident (removing `com.onyx.kreader` caused `ContentBrowser` to crash on boot due to a `ContentProvider` dependency).
 
 - Every action runs at the user level (`--user 0`)
-- Launcher / core / keyboard / gaming engine / PC mode packages are guarded by `KEEP_PACKAGES`
+- Launcher / core / keyboard / gaming engine / connectivity components / system providers are guarded by `KEEP_PACKAGES`
 - Packages of unknown purpose are intentionally left out of the default removal list
 - Every change reverts automatically on factory reset
 

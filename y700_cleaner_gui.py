@@ -1,11 +1,11 @@
 """
 Y700 Cleaner - GUI v1.0
 ========================
-Lenovo Legion Y700 3세대 (TB322FC) 블로트웨어 제거 + 최적화 GUI.
+Lenovo Legion Y700 4세대 (TB322FC) 블로트웨어 제거 + 최적화 GUI.
 기기를 자동 감지하여 맞춤 목록을 표시합니다.
 
 지원 기기:
-  - Lenovo Legion Y700 3세대 (TB322FC, ZUI ZUXOS, Android 16 / SDK 36)
+  - Lenovo Legion Y700 4세대 (TB322FC, ZUI ZUXOS, Android 16 / SDK 36)
 
 설계 원칙 (boox-cleaner 교훈 반영):
   - 모든 작업은 사용자 레벨 (공장초기화 시 복구)
@@ -13,7 +13,7 @@ Lenovo Legion Y700 3세대 (TB322FC) 블로트웨어 제거 + 최적화 GUI.
   - 분석되지 않은 패키지는 기본 목록에 포함하지 않음
 """
 
-VERSION = "1.2"
+VERSION = "1.3"
 
 import subprocess
 import sys
@@ -41,7 +41,7 @@ ADB_PATHS = [
 
 DEVICE_PROFILES = {
     "TB322FC": {
-        "display_name": "Lenovo Legion Y700 (3세대)",
+        "display_name": "Lenovo Legion Y700 (4세대)",
         "codename": "TB322FC",
         "firmware": "ZUI ZUXOS 1.5.x",
         "android": "16 (API 36)",
@@ -105,36 +105,25 @@ PACKAGES = {
         ("com.zui.contacts", "ZUI 연락처"),
         ("com.zui.camera.qr", "ZUI QR 스캐너"),
     ],
-    "WAPI (중국 WiFi 인증)": [
-        ("com.wapi.wapicertmanage", "WAPI 인증서 관리자"),
-    ],
     "Android 불필요 앱": [
-        ("com.android.printspooler", "인쇄 스풀러"),
-        ("com.android.bips", "BIPS 인쇄"),
         ("com.android.printservice.recommendation", "인쇄 추천"),
         ("com.google.android.printservice.recommendation", "Google 인쇄 추천"),
         ("com.android.htmlviewer", "HTML 뷰어"),
-        ("com.android.smspush", "SMS Push"),
         ("com.android.mms.service", "MMS 서비스"),
         ("com.android.wallpaperbackup", "배경화면 백업"),
         ("com.android.dreams.basic", "스크린세이버"),
         ("com.android.DeviceAsWebcam", "웹캠 모드"),
-        ("com.android.hotspot2.osulogin", "핫스팟 2.0 로그인"),
         ("com.android.managedprovisioning", "기기 프로비저닝"),
         ("com.android.emergency", "긴급 정보"),
         ("com.android.storagemanager", "저장공간 관리"),
         ("com.android.cellbroadcastreceiver", "긴급재난문자"),
         ("com.android.cellbroadcastservice", "긴급재난문자 서비스"),
-        ("com.android.bluetoothmidiservice", "블루투스 MIDI 서비스"),
     ],
     "Qualcomm XR/부가 서비스": [
         ("com.qualcomm.qti.xrwifi", "XR WiFi"),
         ("com.qualcomm.qti.xrvd.service", "XR 비디오"),
         ("com.qualcomm.qti.xrcb", "XR 콜백"),
         ("com.quicinc.voice.activation", "Qualcomm 음성 핫워드"),
-        ("vendor.qti.bluetooth.xpan", "BT XPAN"),
-        ("vendor.qti.data.ntnsatapp", "위성 통신"),
-        ("com.qualcomm.qti.cne", "Connectivity Network Engine"),
     ],
     "SIM/통신 (Y700 WiFi-only)": [
         ("com.qualcomm.qti.lpa", "eSIM 프로비저닝"),
@@ -145,22 +134,29 @@ PACKAGES = {
         ("com.qualcomm.uimremoteserver", "SIM 원격 서버"),
         ("com.qualcomm.uimremoteclient", "SIM 원격 클라이언트"),
         ("com.qualcomm.qti.remoteSimlockAuth", "SIM 잠금 인증"),
-        ("com.qualcomm.qti.uceShimService", "UCE Shim"),
         ("com.qualcomm.qti.poweroffalarm", "전원꺼짐 알람"),
         ("com.qti.xdivert", "착신전환"),
         ("com.qti.dcf", "DCF"),
         ("com.qti.ltebc", "LTE Broadcast Cell"),
         ("com.android.imsserviceentitlement", "IMS 서비스 권한"),
         ("com.android.simappdialog", "SIM 앱 다이얼로그"),
-        ("vendor.qti.imsrcs", "IMS RCS"),
-        ("vendor.qti.imsdatachannel", "IMS 데이터채널"),
+    ],
+    "Ready For (PC 모드 미사용 시)": [
+        # 'leapp://ptn/...' 딥링크가 com.lenovo.leos.appstore 를 호출하는데
+        # 본 도구가 leos.appstore 를 제거하므로 ActivityNotFoundException 으로
+        # com.motorola.mobiledesktop 이 백그라운드에서 충돌함.
+        # PC 모니터/Ready For 미사용 시 함께 제거하는 게 깨끗함.
+        ("com.motorola.mobiledesktop", "Ready For (Mobile Desktop)"),
+        ("com.motorola.mobiledesktop.core", "Ready For Core"),
+        ("com.motorola.readyforsignature.app", "Ready For Signature"),
     ],
 }
 
-# ── 절대 건드리지 않을 패키지 (코어/런처/키보드/게이밍) ─────
+# ── 절대 건드리지 않을 패키지 (코어/런처/키보드/연결) ──────
 # Boox 의 com.onyx.kreader 사건 (ContentProvider 하드 의존성 → 부팅 크래시) 교훈 반영.
 # Y700 은 아직 static analysis 가 되지 않았으므로 ZUI 코어 전체를 보수적으로 보호.
 KEEP_PACKAGES = {
+    # ZUI 코어/런처/UI
     "com.zui.launcher": "ZUI 런처 (홈)",
     "com.zui.desktoplauncher": "데스크톱 모드 런처",
     "com.zui.setupwizard": "초기 설정 마법사",
@@ -177,14 +173,31 @@ KEEP_PACKAGES = {
     "com.zui.filemanager": "파일 관리자",
     "com.zui.camera": "카메라",
     "com.zui.gallery": "갤러리",
+    # Lenovo 기능
     "com.lenovo.hyperengine": "HyperEngine 게임 가속",
     "com.lenovo.tab_extreme": "Tab Extreme (게이밍 모드)",
     "com.lenovo.penservice": "스타일러스 서비스",
     "com.lenovo.screensplit": "화면 분할",
     "com.lenovo.tbengine": "Tab 엔진",
-    "com.motorola.mobiledesktop.core": "Ready For (PC 모드)",
     "com.dolby.daxservice": "Dolby Atmos",
     "com.dolby.dolbyvisionservice": "Dolby Vision",
+    # 시스템 settings provider (motorola.mobiledesktop 와 별개)
+    "com.motorola.android.providers.settings": "Motorola Settings Provider (시스템)",
+    # ── 더 많은 연결 ANR 회피용 (2026-05-03 검증) ──
+    # Lenovo 커스텀 'MoreConnectionsSettings' Fragment 가 binder 호출하는 컴포넌트.
+    # 빠뜨리고 제거하면 설정 → 더 많은 연결 5초 ANR 발생.
+    "com.qualcomm.qti.cne": "Connectivity Network Engine (연결 의존)",
+    "com.android.printspooler": "인쇄 스풀러 (더 많은 연결 Print)",
+    "com.android.bips": "BIPS 인쇄 (더 많은 연결 Print)",
+    "vendor.qti.bluetooth.xpan": "BT XPAN (더 많은 연결 BT 확장)",
+    "vendor.qti.data.ntnsatapp": "위성 통신 (Android 14+ 표준 항목)",
+    "com.qualcomm.qti.uceShimService": "UCE Shim (통신 컴포넌트)",
+    "vendor.qti.imsrcs": "IMS RCS (통신 컴포넌트)",
+    "vendor.qti.imsdatachannel": "IMS 데이터채널 (통신 컴포넌트)",
+    "com.android.smspush": "SMS Push (더 많은 연결 의존)",
+    "com.android.bluetoothmidiservice": "BT MIDI (더 많은 연결 의존)",
+    "com.android.hotspot2.osulogin": "핫스팟 2.0 로그인 (더 많은 연결 의존)",
+    "com.wapi.wapicertmanage": "WAPI 인증서 (더 많은 연결 WiFi 보안)",
 }
 
 # ── 성능 최적화 설정 (기본) ───────────────────────────────
@@ -408,7 +421,7 @@ class App(ctk.CTk):
         self.info_label = ctk.CTkLabel(
             self.info_frame,
             text="기기를 연결하면 자동으로 모델을 감지합니다.\n\n"
-                 "지원 기기: Lenovo Legion Y700 3세대 (TB322FC)\n"
+                 "지원 기기: Lenovo Legion Y700 4세대 (TB322FC)\n"
                  "모든 제거/비활성화는 공장초기화 시 자동 복구됩니다.",
             font=("Consolas", 11), text_color="gray", justify="left", anchor="w",
         )
